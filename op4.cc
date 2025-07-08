@@ -3,17 +3,17 @@
 #define SI(T) static inline T
 
 SI(const) u8 MUL_COEFFS[OP4_BL] = {
-    113, 71,  97,  253, 97,  223,
-    9,   53,  23,  47,  249, 15,
-    5,   87,  243, 187, 203, 217,
-    75,  83,  153, 11,  235, 163
+    113, 233, 97,  211,
+    71,  223, 241, 53,
+    23,  47,  79,  37,
+    73,  193, 227, 191
 };
 
 SI(const) u8 INV_MUL_COEFFS[OP4_BL] = {
-    145, 119, 161, 85,  161, 31,
-    57,  29,  167, 207, 73,  239,
-    205, 103, 59,  115, 227, 105,
-    99,  219, 169, 163, 195, 11
+    145, 89,  161, 91,
+    119, 31,  17,  29,
+    167, 207, 175, 173,
+    249, 65,  203, 63
 };
 
 SI(u32) ROTL32(const u32 &x, const u32 &n)
@@ -59,54 +59,42 @@ SI(void) PACK32_LE(u8 dst[4], const u32 &w)
 
 SI(void) shift_bits_add(u8 state[OP4_BL])
 {
-    u32 v0, v1, v2, v3, v4, v5;
+    u32 v0, v1, v2, v3;
 
     v0 = LOAD32_LE(state + 0);
     v1 = LOAD32_LE(state + 4);
     v2 = LOAD32_LE(state + 8);
     v3 = LOAD32_LE(state + 12);
-    v4 = LOAD32_LE(state + 16);
-    v5 = LOAD32_LE(state + 20);
 
     v0 = ROTL32(v0, 13) + v1 + v2 + v3;
-    v1 = ROTL32(v1, 19) + v2 + v3 + v4;
-    v2 = ROTL32(v2, 11) + v3 + v4 + v5;
-    v3 = ROTL32(v3, 17) + v4 + v5 + v0;
-    v4 = ROTL32(v4, 23) + v5 + v0 + v1;
-    v5 = ROTL32(v5, 29) + v0 + v1 + v2;
+    v1 = ROTL32(v1, 19) + v2 + v3 + v0;
+    v2 = ROTL32(v2, 11) + v3 + v0 + v1;
+    v3 = ROTL32(v3, 17) + v0 + v1 + v2;
 
     PACK32_LE(state,      v0);
     PACK32_LE(state + 4,  v1);
     PACK32_LE(state + 8,  v2);
     PACK32_LE(state + 12, v3);
-    PACK32_LE(state + 16, v4);
-    PACK32_LE(state + 20, v5);
 }
 
 SI(void) shift_bits_sub(u8 state[OP4_BL])
 {
-    u32 v0, v1, v2, v3, v4, v5;
+    u32 v0, v1, v2, v3;
 
     v0 = LOAD32_LE(state + 0);
     v1 = LOAD32_LE(state + 4);
     v2 = LOAD32_LE(state + 8);
     v3 = LOAD32_LE(state + 12);
-    v4 = LOAD32_LE(state + 16);
-    v5 = LOAD32_LE(state + 20);
 
-    v5 = ROTR32(v5 - v0 - v1 - v2, 29);
-    v4 = ROTR32(v4 - v5 - v0 - v1, 23);
-    v3 = ROTR32(v3 - v4 - v5 - v0, 17);
-    v2 = ROTR32(v2 - v3 - v4 - v5, 11);
-    v1 = ROTR32(v1 - v2 - v3 - v4, 19);
+    v3 = ROTR32(v3 - v0 - v1 - v2, 17);
+    v2 = ROTR32(v2 - v3 - v0 - v1, 11);
+    v1 = ROTR32(v1 - v2 - v3 - v0, 19);
     v0 = ROTR32(v0 - v1 - v2 - v3, 13);
 
     PACK32_LE(state + 0,  v0);
     PACK32_LE(state + 4,  v1);
     PACK32_LE(state + 8,  v2);
     PACK32_LE(state + 12, v3);
-    PACK32_LE(state + 16, v4);
-    PACK32_LE(state + 20, v5);
 }
 
 SI(void) multiply(u8 state[OP4_BL])
@@ -316,18 +304,16 @@ void OP4::ctr_xcrypt(u8 *out, const u8 *in,
                                     size_t length, const u8 nonce[OP4_NL],
                                     size_t counter)
 {
-    u8 keystream[OP4_BL]{0x12, 0xb6, 0x36, 0x64};
+    u8 keystream[OP4_BL]{};
     u8 keystream_state[OP4_BL]{0};
-    memcpy(keystream + 4, nonce, OP4_NL);
-    PACK32_LE(keystream + 16, static_cast<u32>(counter));
-    PACK32_LE(keystream + 20, static_cast<u32>(counter >> 32));
+    memcpy(keystream, nonce, OP4_NL);
+    PACK32_LE(keystream + OP4_NL, static_cast<u32>(counter));
 
     for (size_t i = 0; i < length; i += OP4_BL) {
         cipher(keystream_state, keystream, this->round_key);
         xor_with_iv(out + i, in + i, keystream_state);
 
         counter++;
-        PACK32_LE(keystream + 16, static_cast<u32>(counter));
-        PACK32_LE(keystream + 20, static_cast<u32>(counter >> 32));
+        PACK32_LE(keystream + OP4_NL, static_cast<u32>(counter));
     }
 }

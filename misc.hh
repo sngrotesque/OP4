@@ -1,5 +1,5 @@
 #pragma once
-#include "op4.hh"
+#include <cstdint>
 #include <cstdio>
 
 void print_diff_hex_line(const uint8_t *data, size_t len, size_t start, size_t hex_per_line) {

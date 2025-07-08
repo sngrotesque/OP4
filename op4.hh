@@ -12,10 +12,10 @@ typedef uint8_t u8;
 
 #define OP4_NATIVE_LE // little-endian
 
-constexpr u32 OP4_BL = 24; // block length
+constexpr u32 OP4_BL = 16; // block length
 constexpr u32 OP4_KL = 32; // key length
 constexpr u32 OP4_NL = 12; // Nonce length
-constexpr u32 OP4_NK = 6;  // key word length
+constexpr u32 OP4_NK = 4;  // key word length
 constexpr u32 OP4_NR = 8;  // Number of rounds
 constexpr u32 OP4_NB = 4;  // Number of columns
 constexpr u32 OP4_RKL = OP4_BL * OP4_NR; // Length of the round key
